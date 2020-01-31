@@ -1,0 +1,8 @@
+{
+	"author": "Vit",
+	"email": "vit@example.com",
+	"nickName": "Vit",
+	"botLocation": "/target",
+	"botFileName": "java-sample-bot-jar-with-dependencies.jar",
+	"botLanguage": "java"
+}
