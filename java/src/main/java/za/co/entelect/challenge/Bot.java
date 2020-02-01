@@ -44,61 +44,85 @@ public class Bot {
     }
 
     public String greedyByAttack() {
-        String command = doNothing();
+        // defendRow first
+        String command = defendRowIfEnemyAttack(doNothing());
+        
+        if (command.equals(doNothing())) 
+            command = buildEnergyIfNoEnemyAttack(command);
+        
+        if (command.equals(doNothing())) 
+            command = buildAttackBehindDefenceBuilding(command); 
+    
+        //If I don't need to do anything then build attack building
+        if (command.equals(doNothing())) {
+            if (canAffordBuilding(BuildingType.ATTACK)) {
+                    command = placeBuildingRandomlyFromBack(BuildingType.ATTACK);
+            }
+        }
+        return command;
+    }
 
-        //If the enemy has an attack building and I don't have a blocking wall, then block from the front.
+    /**
+     * If the enemy has an attack building and I don't have a blocking wall, then block from the front.
+     * @return command
+     **/
+    private String defendRowIfEnemyAttack(String command) {
         for (int i = 0; i < gameHeight; i++) {
-            int enemyAttackOnRow = getAllBuildingsForPlayer(PlayerType.B, b -> b.buildingType == BuildingType.ATTACK, i).size();
-            int myDefenseOnRow = getAllBuildingsForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size();
-
+            int enemyAttackOnRow = getAllBuildingsInRowForPlayer(PlayerType.B, b -> b.buildingType == BuildingType.ATTACK, i).size();
+            int myDefenseOnRow = getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size();
             if (enemyAttackOnRow > 0 && myDefenseOnRow == 0) {
                 if (canAffordBuilding(BuildingType.DEFENSE))
                     command = placeBuildingInRowFromFront(BuildingType.DEFENSE, i);
                 break;
-            }
-        }
-        
-        //If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
-        if (command.equals(doNothing())) {
-            for (int i = 0; i < gameHeight; i++) {
-                int enemyAttackOnRow = getAllBuildingsForPlayer(PlayerType.B, b -> b.buildingType == BuildingType.ATTACK, i).size();
-                int myEnergyOnRow = getAllBuildingsForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, i).size();
-
-                if (enemyAttackOnRow == 0 && myEnergyOnRow == 0) {
-                // if (enemyAttackOnRow == 0) {
-                    if (canAffordBuilding(BuildingType.ENERGY))
-                        command = placeBuildingInRowFromBack(BuildingType.ENERGY, i);
-                    break;
-                }
-            }
-        }
-
-        //If I have a defense building on a row, then build an attack building behind it.
-        if (command.equals(doNothing())) {
-            for (int i = 0; i < gameHeight; i++) {
-                if (getAllBuildingsForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size() > 0
-                        && canAffordBuilding(BuildingType.ATTACK)) {
+            } else if (enemyAttackOnRow > 0 && myDefenseOnRow != 0) {
+                if (canAffordBuilding(BuildingType.ATTACK))
                     command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
-                }
+                break;
             }
         }
-
-        //If I don't need to do anything then either attack or defend randomly based on chance (70% attack, 30% defense).
-        if (command.equals(doNothing())) {
-            if (canAffordBuilding(BuildingType.ATTACK)) {
-                for (int i = 0; i < gameHeight; i++) {
-                    int myAttackOnRow = getAllBuildingsForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ATTACK, i).size();
-                    if (myAttackOnRow < 5) {
-                        command = placeBuildingRandomlyFromBack(BuildingType.ATTACK);
-                    }
-                }
+        return command;
+    }
+    
+    /**
+     * If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
+     * @return command
+     **/
+    private String buildEnergyIfNoEnemyAttack(String command) {
+        for (int i = 0; i < gameHeight; i++) {
+            int enemyAttackOnRow = getAllBuildingsInRowForPlayer(PlayerType.B, b -> b.buildingType == BuildingType.ATTACK, i).size();
+            int myEnergyOnRow = getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, i).size();
+            // int myEnergyOnColumnZero = getAllBuildingsInColumnForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, 0).size();
+            if (enemyAttackOnRow == 0 && myEnergyOnRow == 0) {
+                if (canAffordBuilding(BuildingType.ENERGY))
+                    command = placeBuildingInRowFromBack(BuildingType.ENERGY, i);
+                break;
             }
-            
+            // Energy Building ke 9
+            // if (myEnergyOnColumnZero == 8) {
+            //     int myEnergyOnColumnOne = getAllBuildingsInColumnForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, 1).size();
+            //     if (myEnergyOnColumnOne == 0) {
+            //         if (canAffordBuilding(BuildingType.ENERGY)) 
+            //             command = placeBuildingInRowFromBack(BuildingType.ENERGY, (new Random()).nextInt(8));
+            //     }
+            // }
         }
-        
         return command;
     }
 
+    /**
+     * If I have a defense building on a row, then build an attack building behind it.
+     * @return command
+     **/
+    private String buildAttackBehindDefenceBuilding(String command) {
+        for (int i = 0; i < gameHeight; i++) {
+            if (getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size() > 0
+                    && canAffordBuilding(BuildingType.ATTACK)) {
+                command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
+            }
+        }
+        return command;
+    }
+    
 
     /**
      * Place building in a random row nearest to the back
@@ -186,9 +210,25 @@ public class Bot {
      * @param y          the y
      * @return the result
      **/
-    private List<Building> getAllBuildingsForPlayer(PlayerType playerType, Predicate<Building> filter, int y) {
+    private List<Building> getAllBuildingsInRowForPlayer(PlayerType playerType, Predicate<Building> filter, int y) {
         return gameState.getGameMap().stream()
                 .filter(c -> c.cellOwner == playerType && c.y == y)
+                .flatMap(c -> c.getBuildings().stream())
+                .filter(filter)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all buildings for player in column x
+     *
+     * @param playerType the player type
+     * @param filter     the filter
+     * @param x          the x
+     * @return the result
+     **/
+    private List<Building> getAllBuildingsInColumnForPlayer(PlayerType playerType, Predicate<Building> filter, int x) {
+        return gameState.getGameMap().stream()
+                .filter(c -> c.cellOwner == playerType && c.x == x)
                 .flatMap(c -> c.getBuildings().stream())
                 .filter(filter)
                 .collect(Collectors.toList());
@@ -258,6 +298,16 @@ public class Bot {
                 .mapToInt(b -> b.price)
                 .max()
                 .orElse(0);
+    }
+
+    /**
+     * Get random element of list
+     *
+     * @param list the list < t >
+     * @return the result
+     **/
+    private <T> T getRandomElementOfList(List<T> list) {
+        return list.get((new Random()).nextInt(list.size()));
     }
 
     /**
