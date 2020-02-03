@@ -1,7 +1,7 @@
 {
 	"author": "Aqua",
 	"email": "aqua@example.com",
-	"nickName": "Aqua",
+	"nickName": "AquaV1.1",
 	"botLocation": "/target",
 	"botFileName": "java-sample-bot-jar-with-dependencies.jar",
 	"botLanguage": "java"
