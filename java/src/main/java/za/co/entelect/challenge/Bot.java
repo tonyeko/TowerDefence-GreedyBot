@@ -10,6 +10,8 @@ import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+// Menang lawan reference-bot-greedyattack
+
 public class Bot {
     private static final String NOTHING_COMMAND = "";
     private GameState gameState;
@@ -39,13 +41,17 @@ public class Bot {
      * @return the result
      **/
     public String run() {
+        // String command = doNothing();
         String command = greedyByAttack();
         return command;
     }
 
     public String greedyByAttack() {
-        // defendRow first
+        // defendRow first 
         String command = defendRowIfEnemyAttack(doNothing());
+
+        if (command.equals(doNothing())) 
+            command = buildAnotherDefenceBuilding(command);
         
         if (command.equals(doNothing())) 
             command = buildEnergyIfNoEnemyAttack(command);
@@ -74,15 +80,29 @@ public class Bot {
                 if (canAffordBuilding(BuildingType.DEFENSE))
                     command = placeBuildingInRowFromFront(BuildingType.DEFENSE, i);
                 break;
-            } else if (enemyAttackOnRow > 0 && myDefenseOnRow != 0) {
-                if (canAffordBuilding(BuildingType.ATTACK))
-                    command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
+            } 
+            // else if (enemyAttackOnRow > 0 && myDefenseOnRow != 0) {
+            //     if (canAffordBuilding(BuildingType.ATTACK))
+            //         command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
+            //     break;
+            // }
+        }
+        return command;
+    }
+    
+    private String buildAnotherDefenceBuilding(String command) {
+        for (int i = 0; i < gameHeight; i++) {
+            int enemyAttackOnRow = getAllBuildingsInRowForPlayer(PlayerType.B, b -> b.buildingType == BuildingType.ATTACK, i).size();
+            int myDefenseOnRow = getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size();
+            if (enemyAttackOnRow > 2 && myDefenseOnRow > 0 && myDefenseOnRow < 2) {
+                if (canAffordBuilding(BuildingType.DEFENSE))
+                    command = placeBuildingInRowFromFront(BuildingType.DEFENSE, i);
                 break;
             }
         }
         return command;
     }
-    
+
     /**
      * If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
      * @return command
@@ -91,20 +111,11 @@ public class Bot {
         for (int i = 0; i < gameHeight; i++) {
             int enemyAttackOnRow = getAllBuildingsInRowForPlayer(PlayerType.B, b -> b.buildingType == BuildingType.ATTACK, i).size();
             int myEnergyOnRow = getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, i).size();
-            // int myEnergyOnColumnZero = getAllBuildingsInColumnForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, 0).size();
             if (enemyAttackOnRow == 0 && myEnergyOnRow == 0) {
                 if (canAffordBuilding(BuildingType.ENERGY))
                     command = placeBuildingInRowFromBack(BuildingType.ENERGY, i);
                 break;
             }
-            // Energy Building ke 9
-            // if (myEnergyOnColumnZero == 8) {
-            //     int myEnergyOnColumnOne = getAllBuildingsInColumnForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.ENERGY, 1).size();
-            //     if (myEnergyOnColumnOne == 0) {
-            //         if (canAffordBuilding(BuildingType.ENERGY)) 
-            //             command = placeBuildingInRowFromBack(BuildingType.ENERGY, (new Random()).nextInt(8));
-            //     }
-            // }
         }
         return command;
     }
@@ -115,9 +126,9 @@ public class Bot {
      **/
     private String buildAttackBehindDefenceBuilding(String command) {
         for (int i = 0; i < gameHeight; i++) {
-            if (getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size() > 0
-                    && canAffordBuilding(BuildingType.ATTACK)) {
-                command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
+            int myDefenseOnRow = getAllBuildingsInRowForPlayer(PlayerType.A, b -> b.buildingType == BuildingType.DEFENSE, i).size();
+            if (myDefenseOnRow > 0 && canAffordBuilding(BuildingType.ATTACK)) {
+                command = placeBuildingInRowFromBack(BuildingType.ATTACK, i);
             }
         }
         return command;
