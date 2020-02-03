@@ -50,12 +50,12 @@ public class Bot {
         // defendRow first 
         String command = defendRowIfEnemyAttack(doNothing());
         // ===========TEST IRON CURTAIN
-        if (command.equals(doNothing())) {
-            if (canAffordBuilding(BuildingType.IRONCURTAIN) && isIronCurtainAvailable()) {
-                command = buildCommand(7,7, BuildingType.IRONCURTAIN);
-            }
-        }
-        
+        // if (command.equals(doNothing())) {
+        //     if (canAffordBuilding(BuildingType.IRONCURTAIN) && isIronCurtainAvailable()) {
+        //         command = buildCommand(7,7, BuildingType.IRONCURTAIN);
+        //     }
+        // }
+
         if (command.equals(doNothing())) 
             command = buildAnotherDefenceBuilding(command);
         
@@ -70,13 +70,16 @@ public class Bot {
         if (command.equals(doNothing())) 
             command = buildAttackBehindDefenceBuilding(command); 
     
-        //If I don't need to do anything then build attack building
         if (command.equals(doNothing())) {
-            // int chance = (new Random()).nextInt(100);
-            if (canAffordBuilding(BuildingType.ATTACK)) {
-                command = placeBuildingRandomlyFromBack(BuildingType.ATTACK);
-            }
+            command = attackMostLessHealth(command);
         }
+        //If I don't need to do anything then build attack building
+        // if (command.equals(doNothing())) {
+        //     // int chance = (new Random()).nextInt(100);
+        //     if (canAffordBuilding(BuildingType.ATTACK)) {
+        //         command = placeBuildingRandomlyFromBack(BuildingType.ATTACK);
+        //     }
+        // }
         return command;
     }
 
@@ -119,7 +122,7 @@ public class Bot {
      * @return command
      **/
     private String buildEnergyIfNoEnemyAttack(String command) {
-        // List<Integer> safePlaceList = getSafePlace(myself.playerType);
+        // List<Integer> safePlaceList = getSafePlace();
         // Collections.shuffle(safePlaceList);
         // for (int safePlace : safePlaceList) {
         //     int myEnergyOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ENERGY, safePlace).size();
@@ -157,7 +160,19 @@ public class Bot {
         return command;
     }
     
-
+    /**
+     * Attack most less health on a row 
+     * @return command
+     **/
+    private String attackMostLessHealth(String command) {
+        List<Integer> healthList = getHealthBuildingInRow(opponent.playerType);
+        int minIndex = healthList.indexOf(Collections.min(healthList));
+        if (canAffordBuilding(BuildingType.ATTACK)) {
+            command = placeBuildingInRowFromBack(BuildingType.ATTACK, minIndex);
+        }
+        return command;
+    }
+    
     /**
      * Place building in a random row nearest to the back
      *
@@ -371,10 +386,9 @@ public class Bot {
     /**
      * Get safe place to put building 
      *
-     * @param player the player
      * @return the result
      **/
-    private List<Integer> getSafePlace(PlayerType playerType) {
+    private List<Integer> getSafePlace() {
         List<Integer> result = new ArrayList<>();
         for (int i = 0; i < gameHeight; i++) {
             int enemyAttackOnRow = getAllBuildingsInRowForPlayer(opponent.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
@@ -387,4 +401,23 @@ public class Bot {
     private boolean isIronCurtainAvailable() {
         return gameDetails.round % 30 == 0;
     }
+
+    private List<Integer> getHealthBuildingInRow(PlayerType playerType) {
+        int rowHealth = 0;
+        List<Integer> healthList = new ArrayList<>();
+        for (int i = 0; i < gameHeight; i++) {
+            for (Building attackBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ATTACK, i)) {
+                rowHealth += attackBuilding.health;
+            }
+            for (Building defenceBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.DEFENSE, i)) {
+                rowHealth += defenceBuilding.health;
+            }
+            for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
+                rowHealth += energyBuilding.health;
+            }
+            healthList.add(i, rowHealth);
+        }
+    return healthList;
+    }
+    
 }
