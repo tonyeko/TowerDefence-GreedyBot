@@ -13,7 +13,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Bot {
-    private static final String NOTHING_COMMAND = "";
     private GameState gameState;
     private GameDetails gameDetails;
     private int gameWidth;
@@ -51,8 +50,9 @@ public class Bot {
         String command = defendRowIfEnemyAttack(doNothing());
         // ===========TEST IRON CURTAIN
         // if (command.equals(doNothing())) {
-        //     if (canAffordBuilding(BuildingType.IRONCURTAIN) && isIronCurtainAvailable()) {
-        //         command = buildCommand(7,7, BuildingType.IRONCURTAIN);
+        //     if (isIronCurtainAvailable()) {
+        //         if (canAffordBuilding(BuildingType.IRONCURTAIN))
+        //             command = buildCommand(5,5, BuildingType.IRONCURTAIN);
         //     }
         // }
 
@@ -122,21 +122,13 @@ public class Bot {
      * @return command
      **/
     private String buildEnergyIfNoEnemyAttack(String command) {
-        // List<Integer> safePlaceList = getSafePlace();
-        // Collections.shuffle(safePlaceList);
-        // for (int safePlace : safePlaceList) {
-        //     int myEnergyOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ENERGY, safePlace).size();
-        //     if (myEnergyOnRow == 0 && canAffordBuilding(BuildingType.ENERGY)) {
-        //         command = placeBuildingInRowFromBack(BuildingType.ENERGY, safePlace);
-        //     }
-        //     break;
-        // }
-        for (int i = 0; i < gameHeight; i++) {
-            int enemyAttackOnRow = getAllBuildingsInRowForPlayer(opponent.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
-            int myEnergyOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ENERGY, i).size();
-            if (enemyAttackOnRow == 0 && myEnergyOnRow == 0) {
-                if (canAffordBuilding(BuildingType.ENERGY))
-                    command = placeBuildingInRowFromBack(BuildingType.ENERGY, i);
+        List<Integer> safePlaceList = getSafePlace();
+        Collections.shuffle(safePlaceList);
+        for (int safePlace : safePlaceList) {
+            int myEnergyOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ENERGY, safePlace).size();
+            if (myEnergyOnRow == 0) {
+                if (canAffordBuilding(BuildingType.ENERGY)) 
+                    command = placeBuildingInRowFromBack(BuildingType.ENERGY, safePlace);
                 break;
             }
         }
@@ -365,7 +357,7 @@ public class Bot {
      * @return the result
      **/
     private String doNothing() {
-        return NOTHING_COMMAND;
+        return "";
     }
     
     /**
@@ -392,8 +384,9 @@ public class Bot {
         List<Integer> result = new ArrayList<>();
         for (int i = 0; i < gameHeight; i++) {
             int enemyAttackOnRow = getAllBuildingsInRowForPlayer(opponent.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
-            if (enemyAttackOnRow == 0) 
+            if (enemyAttackOnRow == 0) {
                 result.add(i);
+            }
         }
         return result;
     }
