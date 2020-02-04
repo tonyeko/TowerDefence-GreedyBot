@@ -122,10 +122,11 @@ public class Bot {
                 if (canAffordBuilding(BuildingType.ENERGY)) 
                     command = placeBuildingInRowFromBack(BuildingType.ENERGY, safePlace);
                 break;
-            } else if (canAffordBuilding(BuildingType.ATTACK)) {
-                command = placeBuildingInRowFromFront(BuildingType.ATTACK, safePlace);
-                break;
-            }
+            } 
+            // else if (canAffordBuilding(BuildingType.ATTACK)) {
+            //     command = placeBuildingInRowFromFront(BuildingType.ATTACK, safePlace);
+            //     break;
+            // }
         }
         // if (command.equals(doNothing()) && getAllBuildings(myself.playerType, BuildingType.ENERGY).size() == 8) {
         //     command = placeBuildingRandomlyFromBack(BuildingType.ENERGY);
@@ -400,9 +401,9 @@ public class Bot {
             for (Building defenceBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.DEFENSE, i)) {
                 rowHealth += defenceBuilding.health;
             }
-            // for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
-            //     rowHealth += energyBuilding.health;
-            // }
+            for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
+                rowHealth -= energyBuilding.health*100;
+            }
             healthList.add(i, rowHealth);
         }
     return healthList;
