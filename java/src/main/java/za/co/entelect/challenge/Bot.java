@@ -63,6 +63,12 @@ public class Bot {
             command = attackMostLessHealth(command);
         }
 
+        if (command.equals(doNothing())) {
+            if (myself.energy > 2*getPriceForBuilding(BuildingType.DEFENSE)) {
+                command = placeBuildingRandomlyFromFront(BuildingType.DEFENSE);
+            }
+        }
+
         return command;
     }
 
@@ -399,7 +405,7 @@ public class Bot {
                 rowHealth += attackBuilding.health;
             }
             for (Building defenceBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.DEFENSE, i)) {
-                rowHealth += defenceBuilding.health;
+                rowHealth += defenceBuilding.health*100;
             }
             for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
                 rowHealth -= energyBuilding.health*100;
