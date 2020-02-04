@@ -7,7 +7,6 @@ public enum BuildingType {
     DECONSTRUCT("3"),
     TESLA("4"),
     IRONCURTAIN("5");
-
     private final String type;
 
     BuildingType(String type) {

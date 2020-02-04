@@ -32,6 +32,7 @@ public class Bot {
         gameHeight = gameDetails.mapHeight;
         myself = gameState.getPlayers().stream().filter(p -> p.playerType == PlayerType.A).findFirst().get();
         opponent = gameState.getPlayers().stream().filter(p -> p.playerType == PlayerType.B).findFirst().get();
+        // opponentAttack = getAllBuildings(opponent.playerType, buildingType)
     }
     
     /**
@@ -40,46 +41,31 @@ public class Bot {
      * @return the result
      **/
     public String run() {
-        // String command = doNothing();
         String command = greedyByAttack();
         return command;
     }
 
     public String greedyByAttack() {
         // defendRow first 
-        String command = defendRowIfEnemyAttack(doNothing());
-        // ===========TEST IRON CURTAIN
-        // if (command.equals(doNothing())) {
-        //     if (isIronCurtainAvailable()) {
-        //         if (canAffordBuilding(BuildingType.IRONCURTAIN))
-        //             command = buildCommand(5,5, BuildingType.IRONCURTAIN);
-        //     }
-        // }
+        String command = doNothing();
+        // String command = defendRowIfEnemyAttack(doNothing());
 
-        if (command.equals(doNothing())) 
-            command = buildAnotherDefenceBuilding(command);
+        // if (command.equals(doNothing())) 
+        //     command = buildAnotherDefenceBuilding(command);
         
         if (command.equals(doNothing())) 
             command = buildEnergyIfNoEnemyAttack(command);
-        
-        // ==================TEST DECONSTRUCT
-        // if (!isCellEmpty(0, 0)) {
-        //     command = buildCommand(0, 0, BuildingType.DECONSTRUCT);
-        // }
 
         if (command.equals(doNothing())) 
-            command = buildAttackBehindDefenceBuilding(command); 
+            command = buildAttack(command);
+
+        // if (command.equals(doNothing())) 
+        //     command = buildAttackBehindDefenceBuilding(command); 
     
-        if (command.equals(doNothing())) {
-            command = attackMostLessHealth(command);
-        }
-        //If I don't need to do anything then build attack building
         // if (command.equals(doNothing())) {
-        //     // int chance = (new Random()).nextInt(100);
-        //     if (canAffordBuilding(BuildingType.ATTACK)) {
-        //         command = placeBuildingRandomlyFromBack(BuildingType.ATTACK);
-        //     }
+        //     command = attackMostLessHealth(command);
         // }
+
         return command;
     }
 
@@ -92,8 +78,12 @@ public class Bot {
             int enemyAttackOnRow = getAllBuildingsInRowForPlayer(opponent.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
             int myDefenseOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.DEFENSE, i).size();
             if (enemyAttackOnRow > 0 && myDefenseOnRow == 0) {
-                if (canAffordBuilding(BuildingType.DEFENSE))
+                if (canAffordBuilding(BuildingType.DEFENSE)) {
                     command = placeBuildingInRowFromFront(BuildingType.DEFENSE, i);
+                }
+                else if (canAffordBuilding(BuildingType.ENERGY)) {
+                    command = placeBuildingInRowFromBack(BuildingType.ENERGY, i);
+                }
                 break;
             }
         }
@@ -109,8 +99,11 @@ public class Bot {
             int enemyAttackOnRow = getAllBuildingsInRowForPlayer(opponent.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
             int myDefenseOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.DEFENSE, i).size();
             if (enemyAttackOnRow > 2 && myDefenseOnRow > 0 && myDefenseOnRow < 2) {
-                if (canAffordBuilding(BuildingType.DEFENSE))
+                if (canAffordBuilding(BuildingType.DEFENSE)) {
                     command = placeBuildingInRowFromFront(BuildingType.DEFENSE, i);
+                } else if (canAffordBuilding(BuildingType.ENERGY)) {
+                    command = placeBuildingInRowFromFront(BuildingType.ENERGY, i);
+                }
                 break;
             }
         }
@@ -121,20 +114,43 @@ public class Bot {
      * If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
      * @return command
      **/
+    private String buildAttack(String command) {
+        command = attackMostLessHealth(command);
+        if (command.equals(doNothing())) {
+            for (int i=0; i < gameHeight; i++) {
+                int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
+                if (myAttackOnRow == 0) {
+                    if (canAffordBuilding(BuildingType.ATTACK)) {
+                        command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
+                    }
+                    break;
+                }
+            }
+        }
+        return command;
+    }
+
+
+    /**
+     * If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
+     * @return command
+     **/
     private String buildEnergyIfNoEnemyAttack(String command) {
         List<Integer> safePlaceList = getSafePlace();
         Collections.shuffle(safePlaceList);
         for (int safePlace : safePlaceList) {
             int myEnergyOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ENERGY, safePlace).size();
-            if (myEnergyOnRow == 0) {
+            // int myEnergyBuilding = getAllBuildings(myself.playerType, BuildingType.ENERGY).size();
+            // int opponentEnergyBuilding = getAllBuildings(opponent.playerType, BuildingType.ENERGY).size();
+            if (myEnergyOnRow == 0 && myself.energy < getPriceForBuilding(BuildingType.ATTACK)) {
                 if (canAffordBuilding(BuildingType.ENERGY)) 
                     command = placeBuildingInRowFromBack(BuildingType.ENERGY, safePlace);
                 break;
+            } else if (canAffordBuilding(BuildingType.ATTACK)) {
+                command = placeBuildingInRowFromFront(BuildingType.ATTACK, safePlace);
+                break;
             }
         }
-        // if (command.equals(doNothing()) && getAllBuildings(myself.playerType, BuildingType.ENERGY).size() == 8) {
-        //     command = placeBuildingRandomlyFromBack(BuildingType.ENERGY);
-        // }
         return command;
     }
 
@@ -146,7 +162,7 @@ public class Bot {
         for (int i = 0; i < gameHeight; i++) {
             int myDefenseOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.DEFENSE, i).size();
             if (myDefenseOnRow > 0 && canAffordBuilding(BuildingType.ATTACK)) {
-                command = placeBuildingInRowFromBack(BuildingType.ATTACK, i);
+                command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
             }
         }
         return command;
@@ -160,7 +176,9 @@ public class Bot {
         List<Integer> healthList = getHealthBuildingInRow(opponent.playerType);
         int minIndex = healthList.indexOf(Collections.min(healthList));
         if (canAffordBuilding(BuildingType.ATTACK)) {
-            command = placeBuildingInRowFromBack(BuildingType.ATTACK, minIndex);
+            if(getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, minIndex).size()<=3){
+                command = placeBuildingInRowFromFront(BuildingType.ATTACK, minIndex);
+            }
         }
         return command;
     }
@@ -240,7 +258,7 @@ public class Bot {
      * @return the result
      **/
     private String buildCommand(int x, int y, BuildingType buildingType) {
-        return String.format("%s,%d,%s", String.valueOf(x), y, buildingType.getType());
+        return String.format("%s,%s,%s", String.valueOf(x), String.valueOf(y), buildingType.getType());
     }
 
     /**
@@ -363,7 +381,7 @@ public class Bot {
     /**
      * Get how many buildings from player 
      *
-     * @param player the player
+     * @param playerType the playerType
      * @param buildingType the buildingType
      * @return the result
      **/
@@ -405,9 +423,9 @@ public class Bot {
             for (Building defenceBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.DEFENSE, i)) {
                 rowHealth += defenceBuilding.health;
             }
-            for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
-                rowHealth += energyBuilding.health;
-            }
+            // for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
+            //     rowHealth += energyBuilding.health;
+            // }
             healthList.add(i, rowHealth);
         }
     return healthList;
