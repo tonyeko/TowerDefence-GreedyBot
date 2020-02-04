@@ -115,6 +115,7 @@ public class Bot {
      * @return command
      **/
     private String buildAttack(String command) {
+        int min=0;
         command = attackMostLessHealth(command);
         if (command.equals(doNothing())) {
             for (int i=0; i < gameHeight; i++) {
@@ -123,7 +124,20 @@ public class Bot {
                     if (canAffordBuilding(BuildingType.ATTACK)) {
                         command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
                     }
+                    if(min<myAttackOnRow){
+                        min = myAttackOnRow;
+                    }
                     break;
+                }
+            }
+            if(command.equals(doNothing())){
+                for(int i=0;i<gameHeight;i++){
+                    int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
+                    if(min == myAttackOnRow){
+                        if(canAffordBuilding(BuildingType.ATTACK)){
+                            command = placeBuildingInRowFromFront(BuildingType.ATTACK,i);
+                        }
+                    }
                 }
             }
         }
