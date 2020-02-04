@@ -57,14 +57,11 @@ public class Bot {
             command = buildEnergyIfNoEnemyAttack(command);
 
         if (command.equals(doNothing())) 
-            command = buildAttack(command);
-
-        // if (command.equals(doNothing())) 
-        //     command = buildAttackBehindDefenceBuilding(command); 
+            command = buildAttackBehindDefenceBuilding(command); 
     
-        // if (command.equals(doNothing())) {
-        //     command = attackMostLessHealth(command);
-        // }
+        if (command.equals(doNothing())) {
+            command = attackMostLessHealth(command);
+        }
 
         return command;
     }
@@ -114,48 +111,13 @@ public class Bot {
      * If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
      * @return command
      **/
-    private String buildAttack(String command) {
-        int min=0;
-        command = attackMostLessHealth(command);
-        if (command.equals(doNothing())) {
-            for (int i=0; i < gameHeight; i++) {
-                int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
-                if (myAttackOnRow == 0) {
-                    if (canAffordBuilding(BuildingType.ATTACK)) {
-                        command = placeBuildingInRowFromFront(BuildingType.ATTACK, i);
-                    }
-                    if(min<myAttackOnRow){
-                        min = myAttackOnRow;
-                    }
-                    break;
-                }
-            }
-            if(command.equals(doNothing())){
-                for(int i=0;i<gameHeight;i++){
-                    int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
-                    if(min == myAttackOnRow){
-                        if(canAffordBuilding(BuildingType.ATTACK)){
-                            command = placeBuildingInRowFromFront(BuildingType.ATTACK,i);
-                        }
-                    }
-                }
-            }
-        }
-        return command;
-    }
-
-
-    /**
-     * If there is a row where I don't have energy and there is no enemy attack building, then build energy in the back row.
-     * @return command
-     **/
     private String buildEnergyIfNoEnemyAttack(String command) {
         List<Integer> safePlaceList = getSafePlace();
         Collections.shuffle(safePlaceList);
         for (int safePlace : safePlaceList) {
             int myEnergyOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ENERGY, safePlace).size();
-            // int myEnergyBuilding = getAllBuildings(myself.playerType, BuildingType.ENERGY).size();
-            // int opponentEnergyBuilding = getAllBuildings(opponent.playerType, BuildingType.ENERGY).size();
+            int myEnergyBuilding = getAllBuildings(myself.playerType, BuildingType.ENERGY).size();
+            int opponentEnergyBuilding = getAllBuildings(opponent.playerType, BuildingType.ENERGY).size();
             if (myEnergyOnRow == 0 && myself.energy < getPriceForBuilding(BuildingType.ATTACK)) {
                 if (canAffordBuilding(BuildingType.ENERGY)) 
                     command = placeBuildingInRowFromBack(BuildingType.ENERGY, safePlace);
@@ -165,6 +127,9 @@ public class Bot {
                 break;
             }
         }
+        // if (command.equals(doNothing()) && getAllBuildings(myself.playerType, BuildingType.ENERGY).size() == 8) {
+        //     command = placeBuildingRandomlyFromBack(BuildingType.ENERGY);
+        // }
         return command;
     }
 
@@ -190,9 +155,7 @@ public class Bot {
         List<Integer> healthList = getHealthBuildingInRow(opponent.playerType);
         int minIndex = healthList.indexOf(Collections.min(healthList));
         if (canAffordBuilding(BuildingType.ATTACK)) {
-            if(getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, minIndex).size()<=3){
-                command = placeBuildingInRowFromFront(BuildingType.ATTACK, minIndex);
-            }
+            command = placeBuildingInRowFromFront(BuildingType.ATTACK, minIndex);
         }
         return command;
     }
