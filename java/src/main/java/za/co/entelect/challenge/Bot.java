@@ -172,9 +172,17 @@ public class Bot {
             List<Integer> attackOnRowList = new ArrayList<>(); 
             for (int i = 0; i < minIndexList.size(); i++) {
                 int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, minIndexList.get(i)).size();
-                attackOnRowList.add(minIndexList.get(i), myAttackOnRow);
+                attackOnRowList.add(myAttackOnRow);
             }
-            minIndex = attackOnRowList.indexOf(Collections.min(attackOnRowList));
+            int minattack = Collections.min(attackOnRowList);
+            for(int i = 0;i< minIndexList.size();i++){
+                int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, minIndexList.get(i)).size();
+                if(myAttackOnRow==minattack){
+                    minIndex = minIndexList.get(i);
+                    break;
+                }
+            }
+
         }
         if (canAffordBuilding(BuildingType.ATTACK)) {
             command = placeBuildingInRowFromFront(BuildingType.ATTACK, minIndex);
