@@ -50,6 +50,12 @@ public class Bot {
         String command = doNothing();
         // String command = defendRowIfEnemyAttack(doNothing());
 
+        // if (myself.ironCurtainAvailable) {
+        //     if (canAffordBuilding(BuildingType.IRONCURTAIN)) {
+        //         command = buildCommand(6, 6, BuildingType.IRONCURTAIN);
+        //     }
+        // }
+        
         // if (command.equals(doNothing())) 
         //     command = buildAnotherDefenceBuilding(command);
         
@@ -161,6 +167,15 @@ public class Bot {
     private String attackMostLessHealth(String command) {
         List<Integer> healthList = getHealthBuildingInRow(opponent.playerType);
         int minIndex = healthList.indexOf(Collections.min(healthList));
+        List<Integer> minIndexList = getListOfMinHealthIndex(healthList);
+        if (minIndexList.size() > 1) {
+            List<Integer> attackOnRowList = new ArrayList<>(); 
+            for (int i = 0; i < minIndexList.size(); i++) {
+                int myAttackOnRow = getAllBuildingsInRowForPlayer(myself.playerType, b -> b.buildingType == BuildingType.ATTACK, minIndexList.get(i)).size();
+                attackOnRowList.add(minIndexList.get(i), myAttackOnRow);
+            }
+            minIndex = attackOnRowList.indexOf(Collections.min(attackOnRowList));
+        }
         if (canAffordBuilding(BuildingType.ATTACK)) {
             command = placeBuildingInRowFromFront(BuildingType.ATTACK, minIndex);
         }
@@ -393,14 +408,10 @@ public class Bot {
         return result;
     }
 
-    private boolean isIronCurtainAvailable() {
-        return gameDetails.round % 30 == 0;
-    }
-
     private List<Integer> getHealthBuildingInRow(PlayerType playerType) {
-        int rowHealth = 0;
         List<Integer> healthList = new ArrayList<>();
         for (int i = 0; i < gameHeight; i++) {
+            int rowHealth = 0;
             for (Building attackBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ATTACK, i)) {
                 rowHealth += attackBuilding.health;
             }
@@ -415,4 +426,14 @@ public class Bot {
     return healthList;
     }
     
+    private List<Integer> getListOfMinHealthIndex(List<Integer> healthList) {
+        List<Integer> minHealthIndexList = new ArrayList<>();
+        int minHealth = Collections.min(healthList);
+        for (int i = 0; i < healthList.size(); i++) {
+            if (healthList.get(i) == minHealth) {
+                minHealthIndexList.add(i);
+            }
+        }
+        return minHealthIndexList;
+    }
 }
