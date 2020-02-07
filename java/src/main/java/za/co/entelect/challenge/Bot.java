@@ -420,14 +420,22 @@ public class Bot {
         List<Integer> healthList = new ArrayList<>();
         for (int i = 0; i < gameHeight; i++) {
             int rowHealth = 0;
+            int enemyAttackOnRow = getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ATTACK, i).size();
+            int enemyEnergyOnRow = getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i).size();
             for (Building attackBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ATTACK, i)) {
-                rowHealth += attackBuilding.health;
+                if (enemyAttackOnRow > 1) {
+                    rowHealth += attackBuilding.health;
+                } else {
+                    rowHealth -= attackBuilding.health;
+                }
             }
             for (Building defenceBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.DEFENSE, i)) {
                 rowHealth += defenceBuilding.health*100;
             }
             for (Building energyBuilding : getAllBuildingsInRowForPlayer(playerType, b -> b.buildingType == BuildingType.ENERGY, i)) {
-                rowHealth -= energyBuilding.health*100;
+                if (enemyEnergyOnRow == 1) {
+                    rowHealth -= energyBuilding.health*100;
+                }
             }
             healthList.add(i, rowHealth);
         }
